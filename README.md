@@ -4,6 +4,8 @@ Production debugging toolkit for modern iOS apps.
 
 AppVitals is a lightweight Swift package that gives teams an in-app diagnostics console for logs, network requests, errors, and recent crash context without pulling in an enterprise observability stack.
 
+![AppVitals Debug Console](Demo/Assets/appvitals-demo.gif)
+
 ```swift
 import AppVitals
 
