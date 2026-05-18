@@ -1,0 +1,15 @@
+disabled_rules:
+  - trailing_comma
+opt_in_rules:
+  - empty_count
+  - force_unwrapping
+  - sorted_imports
+line_length:
+  warning: 140
+  error: 180
+identifier_name:
+  min_length:
+    warning: 2
+excluded:
+  - .build
+  - DerivedData

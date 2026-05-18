@@ -1,0 +1,19 @@
+name: Feature Request
+description: Suggest an improvement for AppVitals.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What developer workflow should this improve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: Describe the API or user experience you want.
+    validations:
+      required: true

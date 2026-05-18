@@ -1,0 +1,54 @@
+import Foundation
+
+public struct AppVitalsConfiguration: Sendable, Equatable {
+    public var isEnabled: Bool
+    public var isNetworkTrackingEnabled: Bool
+    public var isShakeToDebugEnabled: Bool
+    public var redactionPolicy: RedactionPolicy
+    public var limits: AppVitalsLimits
+
+    public init(
+        isEnabled: Bool = true,
+        isNetworkTrackingEnabled: Bool = false,
+        isShakeToDebugEnabled: Bool = false,
+        redactionPolicy: RedactionPolicy = .productionSafe,
+        limits: AppVitalsLimits = .production
+    ) {
+        self.isEnabled = isEnabled
+        self.isNetworkTrackingEnabled = isNetworkTrackingEnabled
+        self.isShakeToDebugEnabled = isShakeToDebugEnabled
+        self.redactionPolicy = redactionPolicy
+        self.limits = limits
+    }
+
+    public static let production = AppVitalsConfiguration()
+}
+
+public struct AppVitalsLimits: Sendable, Equatable {
+    public var maxEvents: Int
+    public var maxNetworkTransactions: Int
+    public var maxBodyBytes: Int
+
+    public init(maxEvents: Int = 500, maxNetworkTransactions: Int = 150, maxBodyBytes: Int = 256_000) {
+        self.maxEvents = max(1, maxEvents)
+        self.maxNetworkTransactions = max(1, maxNetworkTransactions)
+        self.maxBodyBytes = max(0, maxBodyBytes)
+    }
+
+    public static let production = AppVitalsLimits()
+}
+
+public struct RedactionPolicy: Sendable, Equatable {
+    public var redactedHeaderNames: Set<String>
+    public var redactedQueryItemNames: Set<String>
+
+    public init(redactedHeaderNames: Set<String>, redactedQueryItemNames: Set<String>) {
+        self.redactedHeaderNames = Set(redactedHeaderNames.map { $0.lowercased() })
+        self.redactedQueryItemNames = Set(redactedQueryItemNames.map { $0.lowercased() })
+    }
+
+    public static let productionSafe = RedactionPolicy(
+        redactedHeaderNames: ["authorization", "cookie", "set-cookie", "x-api-key"],
+        redactedQueryItemNames: ["token", "access_token", "api_key", "password"]
+    )
+}

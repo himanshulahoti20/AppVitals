@@ -1,0 +1,20 @@
+import AppVitalsCore
+import AppVitalsStorage
+import Foundation
+
+public enum NetworkTracking {
+    public static func installGlobalURLProtocol(store: NetworkTransactionStore, configuration: AppVitalsConfiguration) {
+        AppVitalsURLProtocol.configure(store: store, configuration: configuration)
+        URLProtocol.registerClass(AppVitalsURLProtocol.self)
+    }
+
+    public static func sessionConfiguration(from base: URLSessionConfiguration = .default) -> URLSessionConfiguration {
+        let configuration = base
+        var protocolClasses = configuration.protocolClasses ?? []
+        if !protocolClasses.contains(where: { $0 == AppVitalsURLProtocol.self }) {
+            protocolClasses.insert(AppVitalsURLProtocol.self, at: 0)
+        }
+        configuration.protocolClasses = protocolClasses
+        return configuration
+    }
+}
