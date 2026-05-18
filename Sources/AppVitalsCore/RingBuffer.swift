@@ -21,7 +21,9 @@ public struct RingBuffer<Element: Sendable>: Sendable {
         count = 0
     }
 
-    public var isEmpty: Bool { count == 0 } // swiftlint:disable:this empty_count
+    public var isEmpty: Bool {
+        count == 0 // swiftlint:disable:this empty_count
+    }
 
     public var elements: [Element] {
         guard !isEmpty else { return [] }
