@@ -55,8 +55,8 @@ struct DemoRootView: View {
 
     private func loadProducts() async {
         AppVitals.log("Loading products")
+        guard let url = URL(string: "https://jsonplaceholder.typicode.com/posts") else { return }
         do {
-            let url = URL(string: "https://jsonplaceholder.typicode.com/posts")!
             let (data, _) = try await URLSession.shared.data(from: url)
             products = try JSONDecoder().decode([Post].self, from: data).prefix(10).map(\.title)
             AppVitals.log("Loaded \(products.count) products", category: .network)

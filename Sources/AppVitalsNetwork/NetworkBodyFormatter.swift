@@ -7,8 +7,7 @@ public enum NetworkBodyFormatter {
         if isJSON(contentType: contentType),
            let object = try? JSONSerialization.jsonObject(with: data),
            let pretty = try? JSONSerialization.data(withJSONObject: object, options: [.prettyPrinted, .sortedKeys]),
-           let string = String(data: pretty, encoding: .utf8)
-        {
+           let string = String(data: pretty, encoding: .utf8) {
             return string
         }
 

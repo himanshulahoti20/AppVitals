@@ -21,11 +21,13 @@ public struct RingBuffer<Element: Sendable>: Sendable {
         count = 0
     }
 
+    public var isEmpty: Bool { count == 0 } // swiftlint:disable:this empty_count
+
     public var elements: [Element] {
-        guard count > 0 else { return [] }
+        guard !isEmpty else { return [] }
         if count < capacity {
             return storage.prefix(count).compactMap(\.self)
         }
-        return (0 ..< capacity).map { storage[(writeIndex + $0) % capacity]! }
+        return (0 ..< capacity).compactMap { storage[(writeIndex + $0) % capacity] }
     }
 }

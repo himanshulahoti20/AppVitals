@@ -57,12 +57,13 @@ import Testing
 
 @Test func mockURLProtocolServesConfiguredResponse() async throws {
     MockURLProtocol.handler = { _ in
-        let response = HTTPURLResponse(
-            url: URL(string: "https://example.com/data")!,
+        let url = try #require(URL(string: "https://example.com/data"))
+        let response = try #require(HTTPURLResponse(
+            url: url,
             statusCode: 200,
             httpVersion: nil,
             headerFields: ["Content-Type": "application/json"]
-        )!
+        ))
         return (response, Data(#"{"status":"ok"}"#.utf8))
     }
     defer { MockURLProtocol.handler = nil }

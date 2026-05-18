@@ -27,12 +27,12 @@ public final class AppVitalsURLProtocol: URLProtocol, @unchecked Sendable {
         }
     }
 
-    override public class func canInit(with request: URLRequest) -> Bool {
+    override public static func canInit(with request: URLRequest) -> Bool {
         guard URLProtocol.property(forKey: handledKey, in: request) == nil else { return false }
         return request.url?.scheme?.hasPrefix("http") == true
     }
 
-    override public class func canonicalRequest(for request: URLRequest) -> URLRequest {
+    override public static func canonicalRequest(for request: URLRequest) -> URLRequest {
         request
     }
 
@@ -103,15 +103,7 @@ public final class AppVitalsURLProtocol: URLProtocol, @unchecked Sendable {
         )
         let state = Self.state
         Task.detached { @Sendable [payload, state] in
-            await state.record(
-                request: payload.request,
-                statusCode: payload.statusCode,
-                headers: payload.headers,
-                body: payload.body,
-                startedAt: payload.startedAt,
-                completedAt: payload.completedAt,
-                errorDescription: payload.errorDescription
-            )
+            await state.record(payload)
         }
     }
 }
@@ -141,29 +133,21 @@ private actor URLProtocolState {
             .redact(request, maxBodyBytes: configuration.limits.maxBodyBytes)
     }
 
-    func record(
-        request: NetworkRequestSnapshot?,
-        statusCode: Int?,
-        headers: [String: String]?,
-        body: Data,
-        startedAt: Date,
-        completedAt: Date,
-        errorDescription: String?
-    ) async {
-        guard let store, let request else { return }
-        let responseSnapshot = statusCode.map {
+    func record(_ payload: URLProtocolCompletionPayload) async {
+        guard let store, let request = payload.request else { return }
+        let responseSnapshot = payload.statusCode.map {
             NetworkResponseSnapshot(
                 statusCode: $0,
-                headers: redactHeaders(headers ?? [:], policy: configuration.redactionPolicy),
-                body: NetworkBodyFormatter.limited(body, maxBytes: configuration.limits.maxBodyBytes)
+                headers: redactHeaders(payload.headers ?? [:], policy: configuration.redactionPolicy),
+                body: NetworkBodyFormatter.limited(payload.body, maxBytes: configuration.limits.maxBodyBytes)
             )
         }
         await store.append(NetworkTransaction(
-            startedAt: startedAt,
-            completedAt: completedAt,
+            startedAt: payload.startedAt,
+            completedAt: payload.completedAt,
             request: request,
             response: responseSnapshot,
-            errorDescription: errorDescription
+            errorDescription: payload.errorDescription
         ))
     }
 
