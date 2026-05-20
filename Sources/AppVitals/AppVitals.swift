@@ -10,9 +10,12 @@ import Foundation
 public enum AppVitals {
     private static let runtime = AppVitalsRuntime()
 
-    public static func start(_ configuration: AppVitalsConfiguration = .production) {
+    public static func start(
+        _ configuration: AppVitalsConfiguration = .production,
+        crashReporters: [any AppVitalsCrashReporter] = []
+    ) {
         Task {
-            await runtime.start(configuration)
+            await runtime.start(configuration, crashReporters: crashReporters)
         }
     }
 
@@ -47,6 +50,10 @@ public enum AppVitals {
         runtime.stores
     }
 
+    public static func openConsole() {
+        NotificationCenter.default.post(name: AppVitalsNotification.openConsole, object: nil)
+    }
+
     public static func persistCrashContext() {
         Task {
             await runtime.persistCrashContext()
@@ -57,6 +64,7 @@ public enum AppVitals {
 private actor AppVitalsRuntime {
     nonisolated let stores: AppVitalsStores
     private var configuration: AppVitalsConfiguration
+    private var crashReporters: [any AppVitalsCrashReporter] = []
 
     init(configuration: AppVitalsConfiguration = .production) {
         self.configuration = configuration
@@ -67,10 +75,11 @@ private actor AppVitalsRuntime {
         )
     }
 
-    func start(_ configuration: AppVitalsConfiguration) async {
+    func start(_ configuration: AppVitalsConfiguration, crashReporters: [any AppVitalsCrashReporter]) async {
         var mergedConfiguration = configuration
         mergedConfiguration.isNetworkTrackingEnabled = configuration.isNetworkTrackingEnabled || self.configuration.isNetworkTrackingEnabled
         self.configuration = mergedConfiguration
+        self.crashReporters = crashReporters
 
         if mergedConfiguration.isNetworkTrackingEnabled {
             NetworkTracking.installGlobalURLProtocol(store: stores.network, configuration: mergedConfiguration)
@@ -91,10 +100,19 @@ private actor AppVitalsRuntime {
     ) async {
         guard configuration.isEnabled else { return }
         await stores.events.append(AppVitalsEvent(category: category, level: level, message: message, metadata: metadata))
+        for reporter in crashReporters {
+            reporter.addBreadcrumb(message: message, category: category.rawValue, level: level, metadata: metadata)
+            if level == .error || category == .error {
+                reporter.recordNonFatal(message: message, metadata: metadata)
+            }
+        }
     }
 
     func setVisibleScreenName(_ name: String?) async {
         await stores.crashContext.setVisibleScreenName(name)
+        for reporter in crashReporters {
+            reporter.setScreenContext(name)
+        }
         if let name {
             await log("Screen visible: \(name)", category: .navigation, level: .info, metadata: ["screen": name])
         }

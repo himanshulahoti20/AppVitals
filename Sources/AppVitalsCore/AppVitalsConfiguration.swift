@@ -22,6 +22,20 @@ public struct AppVitalsConfiguration: Sendable, Equatable {
     }
 
     public static let production = AppVitalsConfiguration()
+
+    public static let debug = AppVitalsConfiguration(
+        isEnabled: true,
+        isNetworkTrackingEnabled: true,
+        isShakeToDebugEnabled: true
+    )
+
+    public static var current: AppVitalsConfiguration {
+        #if DEBUG
+            return .debug
+        #else
+            return .production
+        #endif
+    }
 }
 
 public struct AppVitalsLimits: Sendable, Equatable {

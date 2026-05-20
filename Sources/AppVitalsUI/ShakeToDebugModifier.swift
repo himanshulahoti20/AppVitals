@@ -1,15 +1,25 @@
+import AppVitalsCore
 import AppVitalsStorage
 import SwiftUI
 
 public extension View {
-    func appVitalsDebugOverlay(stores: AppVitalsStores, isEnabled: Bool = true) -> some View {
-        modifier(AppVitalsDebugOverlayModifier(stores: stores, isEnabled: isEnabled))
+    func appVitalsDebugOverlay(
+        stores: AppVitalsStores,
+        isEnabled: Bool = true,
+        showFloatingBubble: Bool = false
+    ) -> some View {
+        modifier(AppVitalsDebugOverlayModifier(
+            stores: stores,
+            isEnabled: isEnabled,
+            showFloatingBubble: showFloatingBubble
+        ))
     }
 }
 
 private struct AppVitalsDebugOverlayModifier: ViewModifier {
     let stores: AppVitalsStores
     let isEnabled: Bool
+    let showFloatingBubble: Bool
     @State private var isPresented = false
 
     func body(content: Content) -> some View {
@@ -19,11 +29,54 @@ private struct AppVitalsDebugOverlayModifier: ViewModifier {
                 guard shakeEnabled else { return }
                 isPresented = true
             })
+            .overlay {
+                if isEnabled, showFloatingBubble {
+                    FloatingDebugBubble(isPresented: $isPresented)
+                }
+            }
             .sheet(isPresented: $isPresented) {
                 AppVitalsConsoleView(stores: stores)
                     .presentationDetents([.medium, .large])
                     .presentationDragIndicator(.visible)
             }
+            .onReceive(NotificationCenter.default.publisher(for: AppVitalsNotification.openConsole)) { _ in
+                guard isEnabled else { return }
+                isPresented = true
+            }
+    }
+}
+
+private struct FloatingDebugBubble: View {
+    @Binding var isPresented: Bool
+    @State private var position: CGSize = .zero
+    @State private var dragStart: CGSize = .zero
+
+    var body: some View {
+        Button {
+            isPresented = true
+        } label: {
+            Image(systemName: "ladybug.fill")
+                .font(.title2)
+                .foregroundStyle(.white)
+                .frame(width: 48, height: 48)
+                .background(Color.accentColor, in: Circle())
+                .shadow(color: .black.opacity(0.3), radius: 6, y: 3)
+        }
+        .offset(position)
+        .gesture(
+            DragGesture(minimumDistance: 4)
+                .onChanged { value in
+                    position = CGSize(
+                        width: dragStart.width + value.translation.width,
+                        height: dragStart.height + value.translation.height
+                    )
+                }
+                .onEnded { _ in
+                    dragStart = position
+                }
+        )
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+        .padding(24)
     }
 }
 
