@@ -1,0 +1,72 @@
+name: Release
+
+on:
+  pull_request:
+    branches: [main]
+    types: [closed]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Tag and Release
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check if branch is a version (semver)
+        id: version
+        run: |
+          BRANCH="${{ github.event.pull_request.head.ref }}"
+          if [[ "$BRANCH" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "tag=$BRANCH" >> "$GITHUB_OUTPUT"
+            echo "is_release=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Branch '$BRANCH' is not a semver version — skipping release."
+            echo "is_release=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create tag
+        if: steps.version.outputs.is_release == 'true'
+        run: |
+          git tag "${{ steps.version.outputs.tag }}"
+          git push origin "${{ steps.version.outputs.tag }}"
+
+      - name: Extract changelog notes
+        if: steps.version.outputs.is_release == 'true'
+        id: notes
+        run: |
+          VERSION="${{ steps.version.outputs.tag }}"
+          if [[ -f CHANGELOG.md ]]; then
+            NOTES=$(awk -v ver="$VERSION" \
+              'found && /^## \[/{exit} !found && index($0,"## ["ver"]")==1{found=1;next} found{print}' \
+              CHANGELOG.md)
+          fi
+          if [[ -n "$NOTES" ]]; then
+            echo "$NOTES" > /tmp/release_notes.md
+            echo "has_notes=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_notes=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create GitHub Release (changelog notes)
+        if: steps.version.outputs.is_release == 'true' && steps.notes.outputs.has_notes == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ steps.version.outputs.tag }}" \
+            --title "AppVitals ${{ steps.version.outputs.tag }}" \
+            --notes-file /tmp/release_notes.md \
+            --verify-tag
+
+      - name: Create GitHub Release (auto-generated notes)
+        if: steps.version.outputs.is_release == 'true' && steps.notes.outputs.has_notes == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ steps.version.outputs.tag }}" \
+            --title "AppVitals ${{ steps.version.outputs.tag }}" \
+            --generate-notes \
+            --verify-tag

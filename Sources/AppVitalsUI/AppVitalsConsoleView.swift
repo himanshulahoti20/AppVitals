@@ -33,6 +33,11 @@ public struct AppVitalsConsoleView: View {
                 ToolbarItem(placement: .automatic) {
                     filterMenu
                 }
+                ToolbarItem(placement: .automatic) {
+                    ShareLink(item: exportContent) {
+                        Label("Export", systemImage: "square.and.arrow.up")
+                    }
+                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") {
                         dismiss()
@@ -46,6 +51,14 @@ public struct AppVitalsConsoleView: View {
             .onChange(of: model.searchText) {
                 Task { await model.refresh() }
             }
+        }
+    }
+
+    private var exportContent: String {
+        switch selection {
+        case .logs: model.exportLogsText()
+        case .network: model.exportNetworkText()
+        case .errors: model.exportErrorsText()
         }
     }
 

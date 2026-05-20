@@ -1,5 +1,9 @@
 # AppVitals
 
+[![Swift Compatibility](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fhimanshulahoti20%2FAppVitals%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/himanshulahoti20/AppVitals)
+[![Platform Compatibility](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fhimanshulahoti20%2FAppVitals%2Fbadge%3Ftype%3Dplatforms)](https://swiftpackageindex.com/himanshulahoti20/AppVitals)
+[![Sponsor](https://img.shields.io/github/sponsors/himanshulahoti20?label=Sponsor&logo=GitHub)](https://github.com/sponsors/himanshulahoti20)
+
 Production debugging toolkit for modern iOS apps.
 
 AppVitals is a lightweight Swift package that gives teams an in-app diagnostics console for logs, network requests, errors, and recent crash context without pulling in an enterprise observability stack.
@@ -91,3 +95,7 @@ AppVitals defaults to bounded in-memory storage and redacts sensitive headers/qu
 ## Documentation
 
 See [Docs/Architecture.md](Docs/Architecture.md), [Docs/Testing.md](Docs/Testing.md), and [Docs/Release.md](Docs/Release.md).
+
+## Sponsorship
+
+AppVitals is free and open source. If it saves you time or helps your team ship better iOS apps, consider [sponsoring development](https://github.com/sponsors/himanshulahoti20).

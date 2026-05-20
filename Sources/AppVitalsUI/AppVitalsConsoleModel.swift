@@ -34,4 +34,27 @@ public final class AppVitalsConsoleModel {
         allEvents = await fetchedEvents
         transactions = await fetchedTransactions
     }
+
+    public func exportLogsText() -> String {
+        let formatter = ISO8601DateFormatter()
+        return events.map {
+            "[\(formatter.string(from: $0.timestamp))] [\($0.level.rawValue.uppercased())] [\($0.category.rawValue)] \($0.message)"
+        }.joined(separator: "\n")
+    }
+
+    public func exportNetworkText() -> String {
+        let formatter = ISO8601DateFormatter()
+        return transactions.map {
+            let status = $0.response.map { "\($0.statusCode)" } ?? "—"
+            let duration = $0.duration.map { String(format: "%.3fs", $0) } ?? "—"
+            return "[\(formatter.string(from: $0.startedAt))] \($0.request.method) \(status) \(duration) \($0.request.url.absoluteString)"
+        }.joined(separator: "\n")
+    }
+
+    public func exportErrorsText() -> String {
+        let formatter = ISO8601DateFormatter()
+        return errors.map {
+            "[\(formatter.string(from: $0.timestamp))] [\($0.level.rawValue.uppercased())] \($0.message)"
+        }.joined(separator: "\n")
+    }
 }
