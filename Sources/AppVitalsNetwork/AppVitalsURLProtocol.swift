@@ -21,9 +21,13 @@ public final class AppVitalsURLProtocol: URLProtocol, @unchecked Sendable {
     private var startedAt = Date()
     private var requestSnapshot: NetworkRequestSnapshot?
 
-    public static func configure(store: NetworkTransactionStore, configuration: AppVitalsConfiguration) {
+    public static func configure(
+        store: NetworkTransactionStore,
+        eventStore: EventStore? = nil,
+        configuration: AppVitalsConfiguration
+    ) {
         Task {
-            await state.configure(store: store, configuration: configuration)
+            await state.configure(store: store, eventStore: eventStore, configuration: configuration)
         }
     }
 
@@ -120,10 +124,12 @@ private struct URLProtocolCompletionPayload {
 
 private actor URLProtocolState {
     private var store: NetworkTransactionStore?
+    private var eventStore: EventStore?
     private var configuration: AppVitalsConfiguration = .production
 
-    func configure(store: NetworkTransactionStore, configuration: AppVitalsConfiguration) {
+    func configure(store: NetworkTransactionStore, eventStore: EventStore?, configuration: AppVitalsConfiguration) {
         self.store = store
+        self.eventStore = eventStore
         self.configuration = configuration
     }
 
@@ -142,13 +148,34 @@ private actor URLProtocolState {
                 body: NetworkBodyFormatter.limited(payload.body, maxBytes: configuration.limits.maxBodyBytes)
             )
         }
-        await store.append(NetworkTransaction(
+        let transaction = NetworkTransaction(
             startedAt: payload.startedAt,
             completedAt: payload.completedAt,
             request: request,
             response: responseSnapshot,
             errorDescription: payload.errorDescription
-        ))
+        )
+        await store.append(transaction)
+
+        let threshold = configuration.slowRequestThreshold
+        if let eventStore, threshold > 0, let duration = transaction.duration, duration > threshold {
+            await eventStore.append(AppVitalsEvent(
+                category: .performance,
+                level: .warning,
+                message: String(
+                    format: "Slow request: %@ %.2fs",
+                    transaction.request.url.absoluteString,
+                    duration
+                ),
+                metadata: [
+                    "method": transaction.request.method,
+                    "url": transaction.request.url.absoluteString,
+                    "duration_s": String(format: "%.3f", duration),
+                    "threshold_s": String(threshold),
+                    "status": transaction.response.map { "\($0.statusCode)" } ?? "—",
+                ]
+            ))
+        }
     }
 
     private func redactHeaders(_ headers: [String: String], policy: RedactionPolicy) -> [String: String] {

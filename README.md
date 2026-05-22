@@ -1,8 +1,12 @@
 # AppVitals
 
+[![CI](https://github.com/himanshulahoti20/AppVitals/actions/workflows/ci.yml/badge.svg)](https://github.com/himanshulahoti20/AppVitals/actions/workflows/ci.yml)
+[![Latest Release](https://img.shields.io/github/v/release/himanshulahoti20/AppVitals?sort=semver)](https://github.com/himanshulahoti20/AppVitals/releases)
+[![License](https://img.shields.io/github/license/himanshulahoti20/AppVitals)](LICENSE)
+[![Swift Package Manager](https://img.shields.io/badge/SwiftPM-compatible-brightgreen.svg)](https://swift.org/package-manager/)
 [![Swift Compatibility](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fhimanshulahoti20%2FAppVitals%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/himanshulahoti20/AppVitals)
 [![Platform Compatibility](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fhimanshulahoti20%2FAppVitals%2Fbadge%3Ftype%3Dplatforms)](https://swiftpackageindex.com/himanshulahoti20/AppVitals)
-[![Sponsor](https://img.shields.io/github/sponsors/himanshulahoti20?label=Sponsor&logo=GitHub)](https://github.com/sponsors/himanshulahoti20)
+
 
 Production debugging toolkit for modern iOS apps.
 
