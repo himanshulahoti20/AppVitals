@@ -29,6 +29,7 @@ public enum AppVitalsEventCategory: String, Codable, CaseIterable, Sendable {
     case app
     case navigation
     case network
+    case performance
     case warning
     case error
     case custom

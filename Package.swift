@@ -15,6 +15,7 @@ let package = Package(
         .library(name: "AppVitalsNetwork", targets: ["AppVitalsNetwork"]),
         .library(name: "AppVitalsUI", targets: ["AppVitalsUI"]),
         .library(name: "AppVitalsStorage", targets: ["AppVitalsStorage"]),
+        .library(name: "AppVitalsPerformance", targets: ["AppVitalsPerformance"]),
         .library(name: "AppVitalsTestingSupport", targets: ["AppVitalsTestingSupport"]),
     ],
     targets: [
@@ -28,12 +29,22 @@ let package = Package(
             dependencies: ["AppVitalsCore", "AppVitalsStorage"]
         ),
         .target(
+            name: "AppVitalsPerformance",
+            dependencies: ["AppVitalsCore", "AppVitalsStorage"]
+        ),
+        .target(
             name: "AppVitalsUI",
             dependencies: ["AppVitalsCore", "AppVitalsStorage", "AppVitalsNetwork"]
         ),
         .target(
             name: "AppVitals",
-            dependencies: ["AppVitalsCore", "AppVitalsStorage", "AppVitalsNetwork", "AppVitalsUI"]
+            dependencies: [
+                "AppVitalsCore",
+                "AppVitalsStorage",
+                "AppVitalsNetwork",
+                "AppVitalsUI",
+                "AppVitalsPerformance",
+            ]
         ),
         .target(
             name: "AppVitalsTestingSupport",

@@ -3,8 +3,12 @@ import AppVitalsStorage
 import Foundation
 
 public enum NetworkTracking {
-    public static func installGlobalURLProtocol(store: NetworkTransactionStore, configuration: AppVitalsConfiguration) {
-        AppVitalsURLProtocol.configure(store: store, configuration: configuration)
+    public static func installGlobalURLProtocol(
+        store: NetworkTransactionStore,
+        eventStore: EventStore? = nil,
+        configuration: AppVitalsConfiguration
+    ) {
+        AppVitalsURLProtocol.configure(store: store, eventStore: eventStore, configuration: configuration)
         URLProtocol.registerClass(AppVitalsURLProtocol.self)
     }
 

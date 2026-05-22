@@ -1,5 +1,6 @@
 @_exported import AppVitalsCore
 @_exported import AppVitalsNetwork
+@_exported import AppVitalsPerformance
 @_exported import AppVitalsStorage
 #if canImport(SwiftUI)
     @_exported import AppVitalsUI
@@ -22,6 +23,18 @@ public enum AppVitals {
     public static func trackNetwork() {
         Task {
             await runtime.enableNetworkTracking()
+        }
+    }
+
+    public static func trackPerformance() {
+        Task {
+            await runtime.enablePerformanceMonitoring()
+        }
+    }
+
+    public static func markStartupComplete() {
+        Task {
+            await runtime.markStartupComplete()
         }
     }
 
@@ -65,6 +78,8 @@ private actor AppVitalsRuntime {
     nonisolated let stores: AppVitalsStores
     private var configuration: AppVitalsConfiguration
     private var crashReporters: [any AppVitalsCrashReporter] = []
+    private var frameRateMonitor: FrameRateMonitor?
+    private var startupBeganAt: Date?
 
     init(configuration: AppVitalsConfiguration = .production) {
         self.configuration = configuration
@@ -76,20 +91,54 @@ private actor AppVitalsRuntime {
     }
 
     func start(_ configuration: AppVitalsConfiguration, crashReporters: [any AppVitalsCrashReporter]) async {
+        startupBeganAt = Date()
         var mergedConfiguration = configuration
         mergedConfiguration.isNetworkTrackingEnabled = configuration.isNetworkTrackingEnabled || self.configuration.isNetworkTrackingEnabled
         self.configuration = mergedConfiguration
         self.crashReporters = crashReporters
 
         if mergedConfiguration.isNetworkTrackingEnabled {
-            NetworkTracking.installGlobalURLProtocol(store: stores.network, configuration: mergedConfiguration)
+            NetworkTracking.installGlobalURLProtocol(
+                store: stores.network,
+                eventStore: stores.events,
+                configuration: mergedConfiguration
+            )
+        }
+        if mergedConfiguration.isFPSMonitoringEnabled {
+            await enablePerformanceMonitoring()
         }
         await log("App launched", category: .app, level: .info, metadata: [:])
     }
 
     func enableNetworkTracking() {
         configuration.isNetworkTrackingEnabled = true
-        NetworkTracking.installGlobalURLProtocol(store: stores.network, configuration: configuration)
+        NetworkTracking.installGlobalURLProtocol(
+            store: stores.network,
+            eventStore: stores.events,
+            configuration: configuration
+        )
+    }
+
+    func enablePerformanceMonitoring() async {
+        guard frameRateMonitor == nil else { return }
+        let monitor = FrameRateMonitor(
+            dropThreshold: configuration.fpsDropThreshold,
+            eventStore: stores.events
+        )
+        monitor.start()
+        frameRateMonitor = monitor
+    }
+
+    func markStartupComplete() async {
+        guard let began = startupBeganAt else { return }
+        startupBeganAt = nil
+        let elapsed = Date().timeIntervalSince(began)
+        await log(
+            String(format: "Startup completed in %.3fs", elapsed),
+            category: .performance,
+            level: .info,
+            metadata: ["duration_ms": "\(Int(elapsed * 1000))"]
+        )
     }
 
     func log(

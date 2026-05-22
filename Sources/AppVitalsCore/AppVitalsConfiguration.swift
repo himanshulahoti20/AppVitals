@@ -6,19 +6,28 @@ public struct AppVitalsConfiguration: Sendable, Equatable {
     public var isShakeToDebugEnabled: Bool
     public var redactionPolicy: RedactionPolicy
     public var limits: AppVitalsLimits
+    public var slowRequestThreshold: TimeInterval
+    public var isFPSMonitoringEnabled: Bool
+    public var fpsDropThreshold: Double
 
     public init(
         isEnabled: Bool = true,
         isNetworkTrackingEnabled: Bool = false,
         isShakeToDebugEnabled: Bool = false,
         redactionPolicy: RedactionPolicy = .productionSafe,
-        limits: AppVitalsLimits = .production
+        limits: AppVitalsLimits = .production,
+        slowRequestThreshold: TimeInterval = 0,
+        isFPSMonitoringEnabled: Bool = false,
+        fpsDropThreshold: Double = 50.0
     ) {
         self.isEnabled = isEnabled
         self.isNetworkTrackingEnabled = isNetworkTrackingEnabled
         self.isShakeToDebugEnabled = isShakeToDebugEnabled
         self.redactionPolicy = redactionPolicy
         self.limits = limits
+        self.slowRequestThreshold = slowRequestThreshold
+        self.isFPSMonitoringEnabled = isFPSMonitoringEnabled
+        self.fpsDropThreshold = fpsDropThreshold
     }
 
     public static let production = AppVitalsConfiguration()
@@ -26,7 +35,9 @@ public struct AppVitalsConfiguration: Sendable, Equatable {
     public static let debug = AppVitalsConfiguration(
         isEnabled: true,
         isNetworkTrackingEnabled: true,
-        isShakeToDebugEnabled: true
+        isShakeToDebugEnabled: true,
+        slowRequestThreshold: 3.0,
+        isFPSMonitoringEnabled: true
     )
 
     public static var current: AppVitalsConfiguration {
