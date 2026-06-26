@@ -32,6 +32,25 @@ public enum AppVitals {
         }
     }
 
+    /// Returns a token that tracks one live instance of `name`.
+    /// Store the token as a property — when the owning object deinits, disposal is recorded automatically.
+    public static func trackLifetime(named name: String) -> LifecycleToken {
+        LifecycleToken(name: name, store: stores.memory)
+    }
+
+    /// Returns a token that tracks one active subscription/stream named `name`.
+    /// Nil the token (or let it deinit) to record the stream closing.
+    public static func trackStream(named name: String) -> StreamToken {
+        StreamToken(name: name, store: stores.memory)
+    }
+
+    /// Manually records one rebuild for the named view. Use `.trackRebuilds(_:store:)` modifier for automatic counting.
+    public static func countRebuild(_ viewName: String) {
+        Task {
+            await stores.memory.viewRebuilt(viewName)
+        }
+    }
+
     public static func markStartupComplete() {
         Task {
             await runtime.markStartupComplete()
@@ -79,6 +98,7 @@ private actor AppVitalsRuntime {
     private var configuration: AppVitalsConfiguration
     private var crashReporters: [any AppVitalsCrashReporter] = []
     private var frameRateMonitor: FrameRateMonitor?
+    private var memoryMonitor: MemoryMonitor?
     private var startupBeganAt: Date?
 
     init(configuration: AppVitalsConfiguration = .production) {
@@ -107,6 +127,9 @@ private actor AppVitalsRuntime {
         if mergedConfiguration.isFPSMonitoringEnabled {
             await enablePerformanceMonitoring()
         }
+        if mergedConfiguration.isMemoryMonitoringEnabled {
+            await enableMemoryMonitoring()
+        }
         await log("App launched", category: .app, level: .info, metadata: [:])
     }
 
@@ -127,6 +150,17 @@ private actor AppVitalsRuntime {
         )
         monitor.start()
         frameRateMonitor = monitor
+    }
+
+    func enableMemoryMonitoring() async {
+        guard memoryMonitor == nil else { return }
+        let monitor = MemoryMonitor(
+            spikeThresholdMB: configuration.memorySpikeThresholdMB,
+            memoryStore: stores.memory,
+            eventStore: stores.events
+        )
+        monitor.start()
+        memoryMonitor = monitor
     }
 
     func markStartupComplete() async {

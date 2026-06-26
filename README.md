@@ -39,10 +39,11 @@ struct ExampleApp: App {
 - URLSession inspection through `URLProtocol`
 - request method, URL, headers, request body, response body, status, duration, and error capture
 - cURL export and pretty JSON formatting
-- actor-backed event and network stores
-- app, navigation, warning, error, network, and custom timeline events
-- SwiftUI debug console with Logs, Network, and Errors tabs
-- shake-to-debug view modifier
+- actor-backed event, network, and memory stores
+- app, navigation, warning, error, network, performance, and custom timeline events
+- SwiftUI debug console with Logs, Network, Errors, Timeline, and Memory tabs
+- memory usage chart, object lifecycle tracking, stream/listener monitoring, and view rebuild analysis
+- shake-to-debug view modifier and floating debug bubble
 - crash context persistence for recent logs, requests, and visible screen name
 - Swift 6, SwiftUI, Observation, async/await, and Swift Testing
 
@@ -83,12 +84,50 @@ let configuration = NetworkTracking.sessionConfiguration()
 let session = URLSession(configuration: configuration)
 ```
 
+## Memory Monitoring
+
+Enable memory insights in debug builds:
+
+```swift
+// Enabled automatically with the .debug preset:
+AppVitals.start(.debug)
+```
+
+Track object lifetimes — leaks show as non-zero "alive" counts in the Memory tab:
+
+```swift
+class ProductViewModel: ObservableObject {
+    private let _lifetime = AppVitals.trackLifetime(named: "ProductViewModel")
+}
+```
+
+Track active subscriptions or async streams:
+
+```swift
+class FeedViewModel {
+    private var _feedToken: StreamToken?
+
+    func subscribe() {
+        _feedToken = AppVitals.trackStream(named: "FeedStream")
+    }
+    func unsubscribe() { _feedToken = nil }
+}
+```
+
+Count SwiftUI view rebuilds automatically:
+
+```swift
+ProductListView()
+    .trackRebuilds("ProductListView", store: AppVitals.stores.memory)
+```
+
 ## Modules
 
-- `AppVitalsCore`: models, configuration, redaction policy, ring buffer, crash context contracts
-- `AppVitalsStorage`: actor-backed event, network, and crash context stores
+- `AppVitalsCore`: models, configuration, redaction policy, ring buffer, crash context contracts, memory snapshot types
+- `AppVitalsStorage`: actor-backed event, network, crash context, and memory stores
 - `AppVitalsNetwork`: URLProtocol capture, redaction, body formatting, cURL export
-- `AppVitalsUI`: SwiftUI console, search, filters, shake overlay modifier
+- `AppVitalsPerformance`: FPS monitor, memory monitor, lifecycle and stream tokens
+- `AppVitalsUI`: SwiftUI console, search, filters, memory tab, shake overlay modifier
 - `AppVitalsTestingSupport`: mock URL protocol and test factories
 - `AppVitals`: umbrella API for simple app integration
 

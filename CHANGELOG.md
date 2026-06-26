@@ -2,6 +2,26 @@
 
 All notable changes to AppVitals are documented here.
 
+## [1.3.0]
+
+### Added
+
+- **Memory usage monitoring** — `MemoryMonitor` polls resident memory every 5 seconds using `mach_task_basic_info` and stores snapshots in the new `MemoryStore`. Enable via `AppVitalsConfiguration.isMemoryMonitoringEnabled` or the `.debug` preset.
+- **Memory spike warnings** — a `.performance` warning event is logged automatically when memory grows by more than `memorySpikeThresholdMB` (default 50 MB) between samples.
+- **Object lifecycle tracking** — `AppVitals.trackLifetime(named:)` returns a `LifecycleToken`; store it as a property on any class. When the owning object deinits the token deinits too, recording the disposal. Created vs. disposed counts and live instance count are shown in the console.
+- **Stream / listener monitoring** — `AppVitals.trackStream(named:)` returns a `StreamToken`. Nil the token to record the stream closing. Active stream counts are shown in the Memory tab.
+- **View rebuild analysis** — `.trackRebuilds(_:store:)` view modifier counts every SwiftUI body re-evaluation for the decorated view without causing re-render loops. High-frequency views are highlighted in orange/red. Call `AppVitals.countRebuild(_:)` for manual tracking.
+- **Memory tab in the debug console** — fifth tab in `AppVitalsConsoleView` showing a live memory chart, object lifecycle table, active streams, and view rebuild frequency sorted by count.
+- **`MemoryStore` actor** — new `AppVitalsStorage` type holding memory snapshots (`RingBuffer`, capacity 60), object stats, stream counts, and view rebuild counters. Accessible via `AppVitals.stores.memory`.
+- **Export** — the share button on the Memory tab exports a plain-text summary of current usage, object stats, streams, and rebuild counts.
+- **`AppVitalsPerformance.LifecycleToken` and `StreamToken`** — public `Sendable` types available directly from the `AppVitalsPerformance` module for use without the umbrella.
+
+### Changed
+
+- `AppVitalsConfiguration.debug` preset now enables `isMemoryMonitoringEnabled: true`.
+- `AppVitalsStores` gains a `memory: MemoryStore` property (default-initialised, fully backward compatible).
+- `AppVitalsConsoleModel.refresh()` now concurrently fetches memory snapshots, object stats, stream stats, and view rebuild stats alongside events and network transactions.
+
 ## [1.2.0]
 
 ### Added
