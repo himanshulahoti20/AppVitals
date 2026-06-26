@@ -9,6 +9,8 @@ public struct AppVitalsConfiguration: Sendable, Equatable {
     public var slowRequestThreshold: TimeInterval
     public var isFPSMonitoringEnabled: Bool
     public var fpsDropThreshold: Double
+    public var isMemoryMonitoringEnabled: Bool
+    public var memorySpikeThresholdMB: Double
 
     public init(
         isEnabled: Bool = true,
@@ -18,7 +20,9 @@ public struct AppVitalsConfiguration: Sendable, Equatable {
         limits: AppVitalsLimits = .production,
         slowRequestThreshold: TimeInterval = 0,
         isFPSMonitoringEnabled: Bool = false,
-        fpsDropThreshold: Double = 50.0
+        fpsDropThreshold: Double = 50.0,
+        isMemoryMonitoringEnabled: Bool = false,
+        memorySpikeThresholdMB: Double = 50.0
     ) {
         self.isEnabled = isEnabled
         self.isNetworkTrackingEnabled = isNetworkTrackingEnabled
@@ -28,6 +32,8 @@ public struct AppVitalsConfiguration: Sendable, Equatable {
         self.slowRequestThreshold = slowRequestThreshold
         self.isFPSMonitoringEnabled = isFPSMonitoringEnabled
         self.fpsDropThreshold = fpsDropThreshold
+        self.isMemoryMonitoringEnabled = isMemoryMonitoringEnabled
+        self.memorySpikeThresholdMB = memorySpikeThresholdMB
     }
 
     public static let production = AppVitalsConfiguration()
@@ -37,7 +43,8 @@ public struct AppVitalsConfiguration: Sendable, Equatable {
         isNetworkTrackingEnabled: true,
         isShakeToDebugEnabled: true,
         slowRequestThreshold: 3.0,
-        isFPSMonitoringEnabled: true
+        isFPSMonitoringEnabled: true,
+        isMemoryMonitoringEnabled: true
     )
 
     public static var current: AppVitalsConfiguration {

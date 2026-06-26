@@ -36,6 +36,10 @@ public final class AppVitalsConsoleModel {
     public var searchText = ""
     public var selectedCategory: AppVitalsEventCategory?
     public private(set) var transactions: [NetworkTransaction] = []
+    public private(set) var memorySnapshots: [MemorySnapshot] = []
+    public private(set) var objectLifecycleStats: [ObjectLifecycleStats] = []
+    public private(set) var streamStats: [StreamStats] = []
+    public private(set) var viewRebuildStats: [ViewRebuildStats] = []
     private var allEvents: [AppVitalsEvent] = []
 
     public var networkMethodFilter: String?
@@ -106,8 +110,16 @@ public final class AppVitalsConsoleModel {
     public func refresh() async {
         async let fetchedEvents = stores.events.search(searchText)
         async let fetchedTransactions = stores.network.search(searchText)
+        async let fetchedSnapshots = stores.memory.allSnapshots()
+        async let fetchedObjects = stores.memory.allObjectStats()
+        async let fetchedStreams = stores.memory.allStreamStats()
+        async let fetchedRebuilds = stores.memory.allViewRebuildStats()
         allEvents = await fetchedEvents
         transactions = await fetchedTransactions
+        memorySnapshots = await fetchedSnapshots
+        objectLifecycleStats = await fetchedObjects
+        streamStats = await fetchedStreams
+        viewRebuildStats = await fetchedRebuilds
     }
 
     public func exportLogsText() -> String {
@@ -131,6 +143,35 @@ public final class AppVitalsConsoleModel {
         return errors.map {
             "[\(formatter.string(from: $0.timestamp))] [\($0.level.rawValue.uppercased())] \($0.message)"
         }.joined(separator: "\n")
+    }
+
+    public func exportMemoryText() -> String {
+        var lines: [String] = []
+        if let latest = memorySnapshots.last {
+            lines.append(String(format: "Current memory: %.1f MB", latest.usedMB))
+            if let peak = memorySnapshots.map(\.usedMB).max() {
+                lines.append(String(format: "Peak memory: %.1f MB", peak))
+            }
+        }
+        if !objectLifecycleStats.isEmpty {
+            lines.append("\nObject Lifecycle:")
+            for stat in objectLifecycleStats {
+                lines.append("  \(stat.name): created=\(stat.created) disposed=\(stat.disposed) active=\(stat.active)")
+            }
+        }
+        if !streamStats.isEmpty {
+            lines.append("\nActive Streams:")
+            for stat in streamStats {
+                lines.append("  \(stat.name): \(stat.activeCount) active")
+            }
+        }
+        if !viewRebuildStats.isEmpty {
+            lines.append("\nView Rebuilds:")
+            for stat in viewRebuildStats {
+                lines.append("  \(stat.name): \(stat.rebuildCount) rebuilds")
+            }
+        }
+        return lines.joined(separator: "\n")
     }
 
     public func exportTimelineText() -> String {
