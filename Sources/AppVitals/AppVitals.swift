@@ -67,9 +67,47 @@ public enum AppVitals {
         level: AppVitalsLogLevel = .info,
         metadata: [String: String] = [:]
     ) {
+        let timestamp = Date()
         Task {
-            await runtime.log(message, category: category, level: level, metadata: metadata)
+            await runtime.log(message, category: category, level: level, metadata: metadata, timestamp: timestamp)
         }
+    }
+
+    // MARK: - Test observability
+
+    /// Starts a test run. Logs, network traffic and memory samples recorded until `endTest` are attributed to it.
+    @discardableResult
+    public static func beginTest(named name: String, kind: TestKind = .integration) async -> UUID {
+        await runtime.beginTest(name: name, kind: kind)
+    }
+
+    /// Ends a run: pass `failure` to mark it failed. Returns the full report (nil for an unknown id).
+    @discardableResult
+    public static func endTest(_ id: UUID, failure: String? = nil) async -> TestReport? {
+        await runtime.endTest(id, failure: failure)
+    }
+
+    /// Runs `body` as a test: passes if it returns, fails (and rethrows) if it throws.
+    /// For Swift Testing / XCTest assertion failures that don't throw, use `beginTest` / `endTest` directly.
+    public static func test<T>(
+        named name: String,
+        kind: TestKind = .integration,
+        _ body: () async throws -> T
+    ) async rethrows -> T {
+        let id = await beginTest(named: name, kind: kind)
+        do {
+            let result = try await body()
+            await endTest(id)
+            return result
+        } catch {
+            await endTest(id, failure: String(describing: error))
+            throw error
+        }
+    }
+
+    /// Awaitable test log entry (category `.test`), so it is guaranteed to be recorded before `endTest`.
+    public static func testLog(_ message: String, level: AppVitalsLogLevel = .info, metadata: [String: String] = [:]) async {
+        await runtime.log(message, category: .test, level: level, metadata: metadata)
     }
 
     public static func screen(_ name: String?) {
@@ -179,10 +217,13 @@ private actor AppVitalsRuntime {
         _ message: String,
         category: AppVitalsEventCategory,
         level: AppVitalsLogLevel,
-        metadata: [String: String]
+        metadata: [String: String],
+        timestamp: Date = Date()
     ) async {
         guard configuration.isEnabled else { return }
-        await stores.events.append(AppVitalsEvent(category: category, level: level, message: message, metadata: metadata))
+        await stores.events.append(
+            AppVitalsEvent(timestamp: timestamp, category: category, level: level, message: message, metadata: metadata)
+        )
         for reporter in crashReporters {
             reporter.addBreadcrumb(message: message, category: category.rawValue, level: level, metadata: metadata)
             if level == .error || category == .error {
@@ -199,6 +240,32 @@ private actor AppVitalsRuntime {
         if let name {
             await log("Screen visible: \(name)", category: .navigation, level: .info, metadata: ["screen": name])
         }
+    }
+
+    func beginTest(name: String, kind: TestKind) async -> UUID {
+        let run = await stores.testRuns.begin(name: name, kind: kind)
+        await recordMemorySample()
+        await log("Test started: \(name)", category: .test, level: .info, metadata: ["kind": kind.rawValue])
+        return run.id
+    }
+
+    func endTest(_ id: UUID, failure: String?) async -> TestReport? {
+        guard let run = await stores.testRuns.run(id) else { return nil }
+        await log(
+            failure.map { "Test failed: \(run.name) — \($0)" } ?? "Test passed: \(run.name)",
+            category: .test,
+            level: failure == nil ? .info : .error,
+            metadata: ["kind": run.kind.rawValue]
+        )
+        await recordMemorySample()
+        _ = await stores.testRuns.finish(id, failure: failure)
+        return await stores.testReport(for: id, slowRequestThreshold: max(configuration.slowRequestThreshold, 2.0))
+    }
+
+    /// Memory is otherwise sampled every 5 s; tests need a reading at their exact boundaries.
+    private func recordMemorySample() async {
+        guard let bytes = MemoryMonitor.currentFootprint() else { return }
+        await stores.memory.recordSnapshot(MemorySnapshot(usedBytes: bytes))
     }
 
     func persistCrashContext() async {

@@ -71,6 +71,8 @@ public struct AppVitalsConsoleView: View {
                 streamStats: model.streamStats,
                 viewRebuildStats: model.viewRebuildStats
             )
+        case .tests:
+            TestRunListView(runs: model.testRuns, model: model)
         }
     }
 
@@ -81,6 +83,7 @@ public struct AppVitalsConsoleView: View {
         case .errors: model.exportErrorsText()
         case .timeline: model.exportTimelineText()
         case .memory: model.exportMemoryText()
+        case .tests: model.exportTestsText()
         }
     }
 
@@ -91,7 +94,7 @@ public struct AppVitalsConsoleView: View {
             logFilterMenu
         case .network:
             networkFilterMenu
-        case .errors, .timeline, .memory:
+        case .errors, .timeline, .memory, .tests:
             EmptyView()
         }
     }
@@ -209,7 +212,7 @@ public struct AppVitalsConsoleView: View {
 }
 
 private enum ConsoleTab: CaseIterable {
-    case logs, network, errors, timeline, memory
+    case logs, network, errors, timeline, memory, tests
 
     var title: String {
         switch self {
@@ -218,6 +221,7 @@ private enum ConsoleTab: CaseIterable {
         case .errors: "Errors"
         case .timeline: "Timeline"
         case .memory: "Memory"
+        case .tests: "Tests"
         }
     }
 
@@ -228,6 +232,7 @@ private enum ConsoleTab: CaseIterable {
         case .errors: "exclamationmark.triangle"
         case .timeline: "clock.arrow.circlepath"
         case .memory: "memorychip"
+        case .tests: "checklist"
         }
     }
 }

@@ -9,6 +9,7 @@ AppVitals
 ├── AppVitalsCore
 ├── AppVitalsStorage -> AppVitalsCore
 ├── AppVitalsNetwork -> AppVitalsCore, AppVitalsStorage
+├── AppVitalsPerformance -> AppVitalsCore, AppVitalsStorage
 ├── AppVitalsUI -> AppVitalsCore, AppVitalsStorage, AppVitalsNetwork
 └── AppVitalsTestingSupport -> AppVitalsCore, AppVitalsStorage, AppVitalsNetwork
 ```
@@ -46,8 +47,15 @@ Current support is URLSession-first. Alamofire support should be layered through
 - Logs
 - Network
 - Errors
+- Timeline
+- Memory
+- Tests
 
 The root app can attach `.appVitalsDebugOverlay(stores:)` to enable shake presentation. The modifier keeps UIKit-specific shake detection isolated behind `UIViewControllerRepresentable`.
+
+## Test Observability
+
+`TestRunStore` holds `TestRun` values (bounded, newest 100). A run is just a time window: `TestReport` (in `AppVitalsCore`, a pure value type) filters the event, network, and memory data to that window and derives timeline, failure diagnostics, and performance numbers. `AppVitalsStores.testReport(for:)` gathers the inputs. The facade's `beginTest`/`endTest` log start/finish events in the `.test` category and take memory samples at the boundaries. Time-window attribution keeps capture code untouched, at the cost of parallel tests sharing data.
 
 ## Crash Context
 

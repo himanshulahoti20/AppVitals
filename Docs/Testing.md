@@ -8,12 +8,33 @@ Run everything:
 swift test
 ```
 
+## Test Observability
+
+AppVitals can record what happens *while your tests run* and produce a report per test.
+
+```swift
+try await AppVitals.test(named: "Checkout flow", kind: .integration) {
+    await AppVitals.testLog("Tapped Pay")
+    try await api.checkout(cart)
+}
+```
+
+- `AppVitals.test` passes if the body returns, fails (and rethrows) if it throws.
+- For assertion-based failures (`#expect`, `XCTAssert`) use `beginTest` / `endTest(_:failure:)` and pass the failure message.
+- `endTest` returns a `TestReport` with the timeline, API logs, failure diagnostics, and performance numbers.
+- Export with `plainText()`, `jsonData()`, or `write(to:)`, and attach the files in CI (for example `actions/upload-artifact`) or as `XCTAttachment`s.
+- Use `AppVitals.testLog` (awaitable) inside async tests; `AppVitals.log(_, category: .test)` is fire-and-forget and may land after `endTest`.
+- Network capture needs `AppVitals.trackNetwork()` (or the `.debug` preset). Memory and frame-drop numbers need the matching monitors enabled.
+- Data is attributed by time window; run suites serially for clean per-test reports. Event and request stores are bounded, so very chatty tests can push early entries out.
+- Inspect runs on a device in the console's **Tests** tab.
+
 ## Unit Tests
 
 - Core: value semantics, limits, redaction policy, ring buffer behavior
 - Storage: actor append/search/capacity behavior
 - Network: JSON formatting, cURL generation, redaction, URLProtocol integration
 - AppVitals: facade behavior and runtime wiring
+- Test observability: run store lifecycle, report windowing, failure diagnostics, JSON round-trip, and pass/fail via the facade
 
 ## Async Patterns
 

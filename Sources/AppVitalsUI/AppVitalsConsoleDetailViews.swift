@@ -90,7 +90,7 @@ struct TimelineListView: View {
     }
 }
 
-private struct EventTimelineRow: View {
+struct EventTimelineRow: View {
     let event: AppVitalsEvent
 
     var body: some View {
@@ -127,7 +127,7 @@ private struct EventTimelineRow: View {
     }
 }
 
-private struct NetworkTimelineRow: View {
+struct NetworkTimelineRow: View {
     let transaction: NetworkTransaction
 
     var body: some View {

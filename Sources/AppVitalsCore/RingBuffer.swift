@@ -12,7 +12,9 @@ public struct RingBuffer<Element: Sendable>: Sendable {
     public mutating func append(_ element: Element) {
         storage[writeIndex] = element
         writeIndex = (writeIndex + 1) % capacity
-        if count < capacity { count += 1 }
+        if count < capacity {
+            count += 1
+        }
     }
 
     public mutating func removeAll() {
