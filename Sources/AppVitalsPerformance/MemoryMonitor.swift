@@ -50,7 +50,7 @@ import Foundation
         }
 
         private func sample() {
-            guard let bytes = physicalFootprint() else { return }
+            guard let bytes = Self.currentFootprint() else { return }
             let snapshot = MemorySnapshot(usedBytes: bytes)
             let mb = snapshot.usedMB
             let previous = lastSampleMB
@@ -76,7 +76,8 @@ import Foundation
             }
         }
 
-        private func physicalFootprint() -> UInt64? {
+        /// Current resident memory in bytes, or nil when unavailable.
+        public static func currentFootprint() -> UInt64? {
             var info = mach_task_basic_info()
             var count = mach_msg_type_number_t(
                 MemoryLayout<mach_task_basic_info>.size / MemoryLayout<integer_t>.size
@@ -101,6 +102,9 @@ import Foundation
         ) {}
         public func start() {}
         public func stop() {}
+        public static func currentFootprint() -> UInt64? {
+            nil
+        }
     }
 
 #endif

@@ -40,6 +40,7 @@ public final class AppVitalsConsoleModel {
     public private(set) var objectLifecycleStats: [ObjectLifecycleStats] = []
     public private(set) var streamStats: [StreamStats] = []
     public private(set) var viewRebuildStats: [ViewRebuildStats] = []
+    public private(set) var testRuns: [TestRun] = []
     private var allEvents: [AppVitalsEvent] = []
 
     public var networkMethodFilter: String?
@@ -114,12 +115,18 @@ public final class AppVitalsConsoleModel {
         async let fetchedObjects = stores.memory.allObjectStats()
         async let fetchedStreams = stores.memory.allStreamStats()
         async let fetchedRebuilds = stores.memory.allViewRebuildStats()
+        async let fetchedRuns = stores.testRuns.all()
         allEvents = await fetchedEvents
         transactions = await fetchedTransactions
         memorySnapshots = await fetchedSnapshots
         objectLifecycleStats = await fetchedObjects
         streamStats = await fetchedStreams
         viewRebuildStats = await fetchedRebuilds
+        testRuns = await fetchedRuns.reversed()
+    }
+
+    public func report(for run: TestRun) async -> TestReport? {
+        await stores.testReport(for: run.id)
     }
 
     public func exportLogsText() -> String {
@@ -172,6 +179,16 @@ public final class AppVitalsConsoleModel {
             }
         }
         return lines.joined(separator: "\n")
+    }
+
+    public func exportTestsText() -> String {
+        let formatter = ISO8601DateFormatter()
+        return testRuns.map {
+            let duration = $0.duration.map { String(format: "%.3fs", $0) } ?? "—"
+            let failure = $0.failureMessage.map { " — \($0)" } ?? ""
+            let status = $0.status.rawValue.uppercased()
+            return "[\(formatter.string(from: $0.startedAt))] \(status) [\($0.kind.rawValue)] \($0.name) \(duration)\(failure)"
+        }.joined(separator: "\n")
     }
 
     public func exportTimelineText() -> String {

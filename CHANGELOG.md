@@ -2,6 +2,27 @@
 
 All notable changes to AppVitals are documented here.
 
+## [1.4.0]
+
+### Added
+
+- **Test runs** — `AppVitals.beginTest(named:kind:)` / `endTest(_:failure:)` and the `AppVitals.test(named:kind:_:)` wrapper record unit, widget, and integration tests as `TestRun`s (running / passed / failed). The wrapper marks the test failed and rethrows when the body throws.
+- **Widget test logging** — `AppVitals.testLog(_:level:metadata:)` is an awaitable log entry in the new `.test` event category, guaranteed to be recorded before `endTest`.
+- **Integration test tracking & API logs** — network transactions made while a test runs are attached to its report with status, duration, and failure flags.
+- **Test timelines** — each report merges logs and API calls into one chronological timeline with offsets from test start.
+- **Failure diagnostics** — failed reports list the failure reason, error/warning logs, and failed (4xx/5xx/errored) requests.
+- **Performance during tests** — reports include duration, request count, slow requests, average request time, frame drops, and memory peak/delta. Memory is sampled at test start and end so short tests get readings.
+- **Exportable reports** — `TestReport.plainText()`, `jsonData()`, and `write(to:)` (`.txt` + `.json`) for CI artifacts and test attachments.
+- **Tests tab** in the debug console listing runs, with a detail view (summary, performance, timeline) and report sharing.
+- **`TestRunStore`** — new `AppVitalsStorage` actor, available as `AppVitals.stores.testRuns`; `AppVitalsStores.testReport(for:)` builds a report for a run.
+- `MemoryMonitor.currentFootprint()` exposes the current resident memory reading.
+
+### Changed
+
+- `AppVitalsEventCategory` gains a `.test` case.
+- `AppVitalsStores` gains a `testRuns: TestRunStore` property (default-initialised, backward compatible).
+- `AppVitals.log` now timestamps events at the call site rather than when the background task runs, so events are ordered and windowed correctly.
+
 ## [1.3.0]
 
 ### Added

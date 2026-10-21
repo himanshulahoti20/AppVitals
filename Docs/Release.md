@@ -16,8 +16,8 @@ AppVitals follows semantic versioning.
 4. Tag the release:
 
 ```bash
-git tag 0.1.0
-git push origin 0.1.0
+git tag 1.4.0
+git push origin 1.4.0
 ```
 
 5. Create GitHub release notes with migration guidance when needed.

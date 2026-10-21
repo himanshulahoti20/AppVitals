@@ -25,7 +25,10 @@ struct DemoRootView: View {
             List {
                 Section("AppVitals") {
                     Label("Debug preset enables network, shake, FPS, and slow request tracking.", systemImage: "checkmark.seal")
-                    Label("Open the console to inspect Logs, Network, Errors, and Timeline.", systemImage: "clock.arrow.circlepath")
+                    Label(
+                        "Open the console to inspect Logs, Network, Errors, Timeline, Memory, and Tests.",
+                        systemImage: "clock.arrow.circlepath"
+                    )
                 }
 
                 Section("Generate Activity") {
@@ -42,6 +45,12 @@ struct DemoRootView: View {
                         Label(isLoadingSlowRequest ? "Running Slow Request..." : "Run Slow Request", systemImage: "tortoise")
                     }
                     .disabled(isLoadingSlowRequest)
+
+                    Button {
+                        Task { await runSampleTest() }
+                    } label: {
+                        Label("Run Sample Test", systemImage: "checklist")
+                    }
 
                     Button {
                         simulateFrameDrop()
@@ -107,6 +116,13 @@ struct DemoRootView: View {
         } catch {
             AppVitals.log(error.localizedDescription, category: .error, level: .error)
         }
+    }
+
+    private func runSampleTest() async {
+        let id = await AppVitals.beginTest(named: "Load products", kind: .integration)
+        await AppVitals.testLog("Requesting products")
+        await loadProducts()
+        await AppVitals.endTest(id, failure: products.isEmpty ? "No products loaded" : nil)
     }
 
     private func simulateFrameDrop() {

@@ -41,9 +41,10 @@ struct ExampleApp: App {
 - cURL export and pretty JSON formatting
 - actor-backed event, network, and memory stores
 - app, navigation, warning, error, network, performance, and custom timeline events
-- SwiftUI debug console with Logs, Network, Errors, Timeline, and Memory tabs
+- SwiftUI debug console with Logs, Network, Errors, Timeline, Memory, and Tests tabs
 - memory usage chart, object lifecycle tracking, stream/listener monitoring, and view rebuild analysis
 - shake-to-debug view modifier and floating debug bubble
+- test observability: widget/integration test logging, per-test timelines, API logs, failure diagnostics, and exportable reports
 - crash context persistence for recent logs, requests, and visible screen name
 - Swift 6, SwiftUI, Observation, async/await, and Swift Testing
 
@@ -121,10 +122,38 @@ ProductListView()
     .trackRebuilds("ProductListView", store: AppVitals.stores.memory)
 ```
 
+## Test Observability
+
+Wrap a test in `AppVitals.test` to capture everything that happens while it runs — logs, API traffic, memory, frame drops:
+
+```swift
+@Test func checkoutFlow() async throws {
+    AppVitals.start(.debug)
+
+    try await AppVitals.test(named: "Checkout flow", kind: .integration) {
+        await AppVitals.testLog("Tapped Pay")
+        try await api.checkout(cart)   // thrown errors mark the test failed and are rethrown
+    }
+}
+```
+
+Swift Testing / XCTest assertion failures don't throw, so for those drive the run yourself and export the report:
+
+```swift
+let id = await AppVitals.beginTest(named: "Login", kind: .widget)
+// ... exercise the view, assert ...
+let report = await AppVitals.endTest(id, failure: didPass ? nil : "Login button missing")
+
+print(report?.plainText() ?? "")                       // timeline, performance, failure diagnostics
+try report?.write(to: FileManager.default.temporaryDirectory) // .txt + .json, ready to attach in CI
+```
+
+Reports include the test timeline (logs and API calls in order), failed requests, error/warning logs, request/slow-request counts, frame drops, and memory peak/delta. Runs also appear in the console's **Tests** tab, where each report can be shared. Data is attributed to a test by time window, so tests running in parallel within one process share each other's data — run suites serially when you need clean reports.
+
 ## Modules
 
-- `AppVitalsCore`: models, configuration, redaction policy, ring buffer, crash context contracts, memory snapshot types
-- `AppVitalsStorage`: actor-backed event, network, crash context, and memory stores
+- `AppVitalsCore`: models, configuration, redaction policy, ring buffer, crash context contracts, memory snapshot types, test run and report models
+- `AppVitalsStorage`: actor-backed event, network, crash context, memory, and test run stores
 - `AppVitalsNetwork`: URLProtocol capture, redaction, body formatting, cURL export
 - `AppVitalsPerformance`: FPS monitor, memory monitor, lifecycle and stream tokens
 - `AppVitalsUI`: SwiftUI console, search, filters, memory tab, shake overlay modifier
@@ -137,7 +166,7 @@ AppVitals defaults to bounded in-memory storage and redacts sensitive headers/qu
 
 ## Documentation
 
-See [Docs/Architecture.md](Docs/Architecture.md), [Docs/Testing.md](Docs/Testing.md), and [Docs/Release.md](Docs/Release.md).
+See [Docs/Architecture.md](Docs/Architecture.md), [Docs/Testing.md](Docs/Testing.md), [Docs/Release.md](Docs/Release.md), [Docs/AlamofireIntegration.md](Docs/AlamofireIntegration.md), and [Docs/CrashReporterIntegration.md](Docs/CrashReporterIntegration.md).
 
 ## Sponsorship
 
