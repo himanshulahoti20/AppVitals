@@ -12,7 +12,9 @@ public actor TestRunStore {
     public func begin(name: String, kind: TestKind) -> TestRun {
         let run = TestRun(name: name, kind: kind)
         runs.append(run)
-        if runs.count > limit { runs.removeFirst(runs.count - limit) }
+        if runs.count > limit {
+            runs.removeFirst(runs.count - limit)
+        }
         return run
     }
 

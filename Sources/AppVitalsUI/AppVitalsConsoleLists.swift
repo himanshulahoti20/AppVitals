@@ -187,8 +187,12 @@ private struct LatencyChartView: View {
     }
 
     private func barColor(_ duration: Double) -> Color {
-        if duration > 3.0 { return .red }
-        if duration > 1.0 { return .orange }
+        if duration > 3.0 {
+            return .red
+        }
+        if duration > 1.0 {
+            return .orange
+        }
         return .blue
     }
 }

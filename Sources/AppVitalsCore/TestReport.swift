@@ -66,7 +66,9 @@ public struct TestReport: Codable, Equatable, Sendable {
 
     public func plainText() -> String {
         var lines = ["Test: \(run.name) [\(run.kind.rawValue)] — \(run.status.rawValue.uppercased())"]
-        if let duration = run.duration { lines.append(String(format: "Duration: %.3fs", duration)) }
+        if let duration = run.duration {
+            lines.append(String(format: "Duration: %.3fs", duration))
+        }
 
         if run.status == .failed {
             lines.append("\nFailure Diagnostics")
@@ -77,10 +79,16 @@ public struct TestReport: Codable, Equatable, Sendable {
 
         lines.append("\nPerformance")
         lines.append("  Requests: \(performance.requestCount) (\(performance.slowRequests) slow)")
-        if let average = performance.averageRequestDuration { lines.append(String(format: "  Avg request: %.3fs", average)) }
+        if let average = performance.averageRequestDuration {
+            lines.append(String(format: "  Avg request: %.3fs", average))
+        }
         lines.append("  Frame drops: \(performance.frameDrops)")
-        if let peak = performance.peakMemoryMB { lines.append(String(format: "  Peak memory: %.1f MB", peak)) }
-        if let delta = performance.memoryDeltaMB { lines.append(String(format: "  Memory delta: %+.1f MB", delta)) }
+        if let peak = performance.peakMemoryMB {
+            lines.append(String(format: "  Peak memory: %.1f MB", peak))
+        }
+        if let delta = performance.memoryDeltaMB {
+            lines.append(String(format: "  Memory delta: %+.1f MB", delta))
+        }
 
         lines.append("\nTimeline")
         let entries: [(Date, String)] = events.map { ($0.timestamp, "LOG [\($0.level.rawValue.uppercased())] \($0.message)") }
